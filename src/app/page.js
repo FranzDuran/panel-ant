@@ -93,6 +93,8 @@ import SolicitudesAgentes from "./components/SolicitudesAgentes";
 import Asignaciones from "./components/Asignaciones";
 import Reprogramaciones from "./components/Reprogramaciones";
 import CierreDeContrato from "./components/CierreDeContrato";
+import PotencialesPropietarios from "./components/PotencialesPropietarios";
+import PreciosDePropiedad from "./components/PreciosDePropiedad";
 
 const App = () => {
   /* const {
@@ -121,6 +123,10 @@ const App = () => {
         return <Reprogramaciones />;
         case "7":
         return <CierreDeContrato />;
+        case "8":
+        return <PotencialesPropietarios />;
+        case "9":
+        return <PreciosDePropiedad />;
 
       // Agrega más casos según sea necesario para otros elementos del menú
 

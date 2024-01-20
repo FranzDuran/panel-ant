@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Select, Button, Radio, Input } from "antd";
+import { Modal, Button, Radio, Input } from "antd";
 import CargarArchivos from "./CargarArchivos";
 
 const ModalCerrasteContrato = ({
@@ -14,22 +14,16 @@ const ModalCerrasteContrato = ({
   const [lastStep, setLastStep] = useState(false);
   const [additionalInfo, setAdditionalInfo] = useState("");
 
-  console.log(radioValue)
   const handleRadioChange = (e) => {
     setRadioValue(e.target.value);
   };
 
   const handleButtonClick = () => {
-    console.log("1")
     // Handle logic for button click based on radioValue
     if (radioValue === "Si") {
-      console.log("1.1")
       setNextStep(true);
-      // Handle logic for "Completar"
-      //handleCancel();
     } else {
       // Handle logic for "Siguiente"
-      console.log("1.2")
       setNextStep(true);
     }
   };
@@ -39,7 +33,6 @@ const ModalCerrasteContrato = ({
   };
 
   const handleFinishButtonClick = () => {
-    console.log("2")
     const newData = {
       previousData: data,
       additionalInfo: additionalInfo,
@@ -52,49 +45,66 @@ const ModalCerrasteContrato = ({
   };
 
   const handleNextButtonClick = () => {
-    console.log("3")
-    setNextStep(false)
+    setNextStep(false);
     setLastStep(true);
   };
-  const handleUploadButtonClick = () => {};
+
+  const handleFileUpload = (fileList) => {
+    // Aquí puedes realizar acciones con la información del archivo, por ejemplo, enviarla al servidor
+    console.log("Archivos cargados en el componente padre:", fileList);
+    const newData = {
+      previousData: data,
+      additionalInfo: fileList,
+      radioValue: radioValue,
+    };
+    onFinish(newData);
+  };
 
   return (
     <>
       <Modal
         title={
-          nextStep
+          nextStep && radioValue === "No"
             ? "Ingresar observación"
+            : nextStep && radioValue === "Si"
+            ? "Cargar contrato y documentos del propietario de SPACEOS"
+            : lastStep
+            ? "Agrega los documentos de propietario de SPACEOS"
             : "¿Cerraste el contrato con el propietario?"
         }
         open={isModalOpen}
         onOk={handleOk}
         onCancel={handleCancel}
-        footer={ lastStep ? null : [
-          nextStep && radioValue === "No" && (
-            <Button key="back" onClick={handleBackButtonClick}>
-              Atras
-            </Button>
-          ),
-          <Button
-            key="submit"
-            type="primary"
-            onClick={
-              nextStep && radioValue === "No"
-                ? handleFinishButtonClick
-                : nextStep && radioValue === "Si"
-                ? handleNextButtonClick
-                : handleButtonClick
-            }
-          >
-            {!nextStep && radioValue === "Si"
-              ? "Continuar"
-              : !nextStep && radioValue === "No"
-              ? "Siguiente"
-              : nextStep && radioValue === "Si"
-              ? "Subir documentos"
-              : "Finalizar"}
-          </Button>,
-        ]}
+        footer={
+          lastStep
+            ? null
+            : [
+                nextStep && radioValue === "No" && (
+                  <Button key="back" onClick={handleBackButtonClick}>
+                    Atras
+                  </Button>
+                ),
+                <Button
+                  key="submit"
+                  type="primary"
+                  onClick={
+                    nextStep && radioValue === "No"
+                      ? handleFinishButtonClick
+                      : nextStep && radioValue === "Si"
+                      ? handleNextButtonClick
+                      : handleButtonClick
+                  }
+                >
+                  {!nextStep && radioValue === "Si"
+                    ? "Continuar"
+                    : !nextStep && radioValue === "No"
+                    ? "Siguiente"
+                    : nextStep && radioValue === "Si"
+                    ? "Subir documentos"
+                    : "Finalizar"}
+                </Button>,
+              ]
+        }
       >
         {nextStep && radioValue === "No" ? (
           <>
@@ -115,7 +125,10 @@ const ModalCerrasteContrato = ({
           </>
         ) : lastStep && radioValue === "Si" ? (
           <>
-            <CargarArchivos/>
+            <CargarArchivos
+              onCloseModal={handleCancel}
+              onFileUpload={handleFileUpload}
+            />
           </>
         ) : (
           <Radio.Group onChange={handleRadioChange} value={radioValue}>

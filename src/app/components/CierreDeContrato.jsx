@@ -157,6 +157,7 @@ const CierreDeContrato = () => {
           detalle_adicional: propietario.detalle_adicional,
         },
         estado: propietario.estado,
+        archivos: propietario.archivos,
         cierre_de_contrato: propietario.cierre_de_contrato,
         agente: propietario.agente,
         fecha_de_visita_propietario: propietario.fecha_de_visita_propietario,
@@ -196,6 +197,30 @@ const CierreDeContrato = () => {
 
   const handleFinish = (newData) => {
     console.log(newData);
+    setData((prevData) => {
+      return prevData.map((item) => {
+        // Assuming selectedAgent.key corresponds to the key in data state
+        if (item.key === modalData.data.key) {
+          // Append "nombre" and "apellido" to the existing "agente" value
+
+          if (newData.radioValue === "Si") {
+            return {
+              ...item,
+
+              estado: "Pendiente precio de propiedad",
+              archivos: item.additionalInfo
+            };
+          }
+          // Return a new object with updated "agente" property
+          return {
+            ...item,
+
+            estado: "Pendiente de acuerdo con el propietario",
+          };
+        }
+        return item;
+      });
+    });
   };
 
   return (

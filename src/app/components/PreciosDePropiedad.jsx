@@ -1,12 +1,12 @@
 "use client";
 import React, { useState } from "react";
-import { ProfileOutlined, QuestionCircleOutlined } from "@ant-design/icons";
-import { Space, Table, Tag } from "antd";
+import { ProfileOutlined, CloudUploadOutlined } from "@ant-design/icons";
+import { Space, Table, Tag, Input, Button } from "antd";
 import { dataPropietarios } from "./data";
+import ModalCerrasteContrato from "./Modals/ModalCerrasteContrato";
 import ModalResumen from "./Modals/ModalResumen";
-import ModalAgenteRealizoVisita from "./Modals/ModalAgenteRealizoVisita";
 
-const ListadoDeVisitas = () => {
+const PreciosDePropiedad = () => {
   const columns = [
     {
       title: "N°",
@@ -35,43 +35,40 @@ const ListadoDeVisitas = () => {
       dataIndex: "estado",
     },
     {
-      title: "¿Agente realizó visita?",
-      dataIndex: "agente_realizo_visita",
-      key: "agente_realizo_visita",
-      render: (_, record) => (
-        <QuestionCircleOutlined
-          style={{ color: "blue", fontSize: "16px" }}
-          onClick={() => showModal(record, "agente_realizo_visita")}
-        />
+      title: "Precios de propiedad",
+      key: "precios_de_propiedad",
+      dataIndex: "precios_de_propiedad",
+      render: (precios_de_propiedad) => (
+        <span>
+          {precios_de_propiedad &&
+          Object.keys(precios_de_propiedad).length > 0 ? (
+            // Render a green Tag with "Precio definido" text
+            <Tag color="green" onClick={handleTagClick}>
+              Precio definido
+            </Tag>
+          ) : (
+            // Render a light blue Tag with "Programar verificador" text
+            <Tag color="blue" onClick={handleTagClick}>
+              Por definir precio
+            </Tag>
+          )}
+        </span>
       ),
     },
+    {
+      title: "Modalidad de propiedad",
+      dataIndex: "modalidad_de_propiedad",
+      key: "modalidad_de_propiedad",
+    },
     /* {
-      title: "Cierre de contrato",
-      dataIndex: "cierre_de_contrato",
-      key: "cierre_de_contrato",
-      render: () => (
-        <CloudUploadOutlined style={{ color: "blue", fontSize: "16px" }} />
-      ),
+      title: "Verificador",
+      key: "verificador",
+      dataIndex: "verificador",
     }, */
     {
       title: "Agente",
       dataIndex: "agente",
       key: "agente",
-    },
-    {
-      title: "Fecha de visita propietario",
-      dataIndex: "fecha_de_visita_propietario",
-      key: "fecha_de_visita_propietario",
-    },
-    {
-      title: "Hora de inicio visita",
-      dataIndex: "hora_de_inicio_visita",
-      key: "hora_de_inicio_visita",
-    },
-    {
-      title: "Hora de fin visita",
-      dataIndex: "hora_de_fin_visita",
-      key: "hora_de_fin_visita",
     },
     {
       title: "#Propiedades",
@@ -109,11 +106,6 @@ const ListadoDeVisitas = () => {
       key: "detalle_adicional",
     },
     {
-      title: "Modalidad de propiedad",
-      dataIndex: "modalidad_de_propiedad",
-      key: "modalidad_de_propiedad",
-    },
-    {
       title: "Categoría de propiedad",
       dataIndex: "categoria_de_propiedad",
       key: "categoria_de_propiedad",
@@ -138,7 +130,7 @@ const ListadoDeVisitas = () => {
   const [data, setData] = useState(
     dataPropietarios
       .filter(
-        (propietario) => propietario.estado === "Pendiente de realizar visita"
+        (propietario) => propietario.estado === "Pendiente precio de propiedad"
       )
       .map((propietario, index) => ({
         key: index + 1,
@@ -156,8 +148,8 @@ const ListadoDeVisitas = () => {
           tipo_de_propiedad: propietario.tipo_de_propiedad,
           propiedades: propietario.propiedades,
           fecha: propietario.fecha,
-          hora_de_inicio: propietario.hora_de_inicio,
-          hora_de_fin: propietario.hora_de_fin,
+          hora_de_inicio: propietario.hora_de_inicio_visita,
+          hora_de_fin: propietario.hora_de_fin_visita,
           primer_nombre: propietario.primer_nombre,
           primer_apellido: propietario.primer_apellido,
           telefono: propietario.telefono,
@@ -165,20 +157,17 @@ const ListadoDeVisitas = () => {
           detalle_adicional: propietario.detalle_adicional,
         },
         estado: propietario.estado,
-        agente_realizo_visita: "",
-        cierre_de_contrato: "",
+        precios_de_propiedad: propietario.precios_de_propiedad,
+        modalidad_de_propiedad: propietario.modalidad_de_propiedad,
+        verificador: propietario.verificador,
         agente: propietario.agente,
-        fecha_de_visita_propietario: propietario.fecha,
-        hora_de_inicio_visita: propietario.hora_de_inicio_visita,
-        hora_de_fin_visita: propietario.hora_de_fin_visita,
-        propiedades: propietario.propiedades,
+        propiedades: propietario.categoria_de_propiedades,
         nombre: propietario.primer_nombre,
         apellido: propietario.primer_apellido,
         telefono: propietario.telefono,
         direccion: propietario.direccion,
         trabajas_agente_externo: propietario.trabaja_con_agente,
         detalle_adicional: propietario.detalle_adicional,
-        modalidad_de_propiedad: propietario.modalidad_de_propiedad,
         categoria_de_propiedad: propietario.categoria_de_propiedades,
         tipo_de_propiedad: propietario.tipo_de_propiedad,
         codigo_de_propiedad: propietario.codigo_de_propiedad,
@@ -203,52 +192,63 @@ const ListadoDeVisitas = () => {
     setIsModalOpen(false);
   };
 
-  /*************************************************/
-  const onComplete = (newData) => {
-    setData((prevData) => {
-      return prevData.map((item) => {
-        // Assuming selectedAgent.key corresponds to the key in data state
-        if (item.key === modalData.data.key) {
-          // Append "nombre" and "apellido" to the existing "agente" value
+  //---------------------------------------
+  const [isTableVisible, setIsTableVisible] = useState(true);
+  const [precioInput, setPrecioInput] = useState(0);
 
-          if (newData.additionalInfo || newData.radioValue) {
-            return {
-              ...item,
+  const handleTagClick = () => {
+    console.log("1");
+    setIsTableVisible(false);
+  };
 
-              estado: "Pendiente de reprogramar visita",
-            };
-          }
-          // Return a new object with updated "agente" property
-          return {
-            ...item,
+  const handleInputChange = (e) => {
+    setPrecioInput(Number(e.target.value));
+  };
 
-            estado: "Pendiente de cerrar contrato",
-          };
-        }
-        return item;
-      });
-    });
+  const handleIncrease = () => {
+    setPrecioInput((prevPrecio) => prevPrecio + 1);
+  };
+
+  const handleDecrease = () => {
+    setPrecioInput((prevPrecio) => Math.max(0, prevPrecio - 1));
+  };
+
+  const handleSave = () => {
+    // Implement logic to save the entered price
+    console.log("Saving price:", precioInput);
+
+    // Show the table again
+    setIsTableVisible(true);
   };
 
   return (
     <>
-      <Table columns={columns} dataSource={data} scroll={{ x: true }} />
-      <ModalResumen
-        isModalOpen={isModalOpen && modalData.actionType === "resumen"}
-        data={modalData.data}
-        handleOk={handleOk}
-        handleCancel={handleCancel}
-      />
-      <ModalAgenteRealizoVisita
-        isModalOpen={
-          isModalOpen && modalData.actionType === "agente_realizo_visita"
-        }
-        data={modalData.data}
-        handleOk={handleOk}
-        handleCancel={handleCancel}
-        onComplete={onComplete}
-      />
+      {!isTableVisible ? (
+        <div>
+          <h2>¿Cuáles son los costos de la propiedad?</h2>
+          <Input
+            type="number"
+            value={precioInput}
+            onChange={handleInputChange}
+            addonBefore="-"
+            addonAfter="+"
+          />
+          <Button onClick={handleDecrease}>-</Button>
+          <Button onClick={handleIncrease}>+</Button>
+          <Button onClick={handleSave}>Guardar</Button>
+        </div>
+      ) : (
+        <>
+          <Table columns={columns} dataSource={data} scroll={{ x: true }} />
+          <ModalResumen
+            isModalOpen={isModalOpen && modalData.actionType === "resumen"}
+            data={modalData.data}
+            handleOk={handleOk}
+            handleCancel={handleCancel}
+          />
+        </>
+      )}
     </>
   );
 };
-export default ListadoDeVisitas;
+export default PreciosDePropiedad;

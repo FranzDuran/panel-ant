@@ -1,12 +1,19 @@
 "use client";
 import React, { useState } from "react";
-import { ProfileOutlined, QuestionCircleOutlined } from "@ant-design/icons";
+import {
+  UserOutlined,
+  ProfileOutlined,
+  QuestionCircleOutlined,
+  ExclamationCircleOutlined,
+  CloudUploadOutlined,
+} from "@ant-design/icons";
 import { Space, Table, Tag } from "antd";
 import { dataPropietarios } from "./data";
 import ModalResumen from "./Modals/ModalResumen";
-import ModalAgenteRealizoVisita from "./Modals/ModalAgenteRealizoVisita";
+import ModalReprogramarVisita from "./Modals/ModalReprogramarVisita";
+import ReprogramarVisitaModal from "./Modals/ReprogramarVisitaModal";
 
-const ListadoDeVisitas = () => {
+const PotencialesPropietarios = () => {
   const columns = [
     {
       title: "N°",
@@ -35,24 +42,16 @@ const ListadoDeVisitas = () => {
       dataIndex: "estado",
     },
     {
-      title: "¿Agente realizó visita?",
-      dataIndex: "agente_realizo_visita",
-      key: "agente_realizo_visita",
+      title: "¿Deseas reprogramar visita con el propietario?",
+      dataIndex: "deseas_reprogramar_visita",
+      key: "deseas_reprogramar_visita",
       render: (_, record) => (
         <QuestionCircleOutlined
           style={{ color: "blue", fontSize: "16px" }}
-          onClick={() => showModal(record, "agente_realizo_visita")}
+          onClick={() => showModal(record, "deseas_reprogramar_visita")}
         />
       ),
     },
-    /* {
-      title: "Cierre de contrato",
-      dataIndex: "cierre_de_contrato",
-      key: "cierre_de_contrato",
-      render: () => (
-        <CloudUploadOutlined style={{ color: "blue", fontSize: "16px" }} />
-      ),
-    }, */
     {
       title: "Agente",
       dataIndex: "agente",
@@ -138,11 +137,11 @@ const ListadoDeVisitas = () => {
   const [data, setData] = useState(
     dataPropietarios
       .filter(
-        (propietario) => propietario.estado === "Pendiente de realizar visita"
+        (propietario) => propietario.estado === "Pendiente de acuerdo con el propietario"
       )
       .map((propietario, index) => ({
         key: index + 1,
-        rol: "AGENTE INMOBILIARIO",
+        rol: "SUPERVISOR",
         resumen: {
           ubicacion: propietario.ubicacion,
           direccion: propietario.direccion,
@@ -166,7 +165,6 @@ const ListadoDeVisitas = () => {
         },
         estado: propietario.estado,
         agente_realizo_visita: "",
-        cierre_de_contrato: "",
         agente: propietario.agente,
         fecha_de_visita_propietario: propietario.fecha,
         hora_de_inicio_visita: propietario.hora_de_inicio_visita,
@@ -186,32 +184,33 @@ const ListadoDeVisitas = () => {
       }))
   );
 
-  //*********************************************/
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalData, setModalData] = useState("");
+   //*********************************************/
+   const [isModalOpen, setIsModalOpen] = useState(false);
+   const [modalData, setModalData] = useState("");
+ 
+   const showModal = (data, actionType) => {
+     setModalData({ data, actionType });
+     setIsModalOpen(true);
+   };
+ 
+   const handleOk = () => {
+     setIsModalOpen(false);
+   };
+ 
+   const handleCancel = () => {
+     setIsModalOpen(false);
+   };
 
-  const showModal = (data, actionType) => {
-    setModalData({ data, actionType });
-    setIsModalOpen(true);
-  };
-
-  const handleOk = () => {
-    setIsModalOpen(false);
-  };
-
-  const handleCancel = () => {
-    setIsModalOpen(false);
-  };
-
-  /*************************************************/
+   /*************************************************/
   const onComplete = (newData) => {
+    //console.log(newData);
     setData((prevData) => {
       return prevData.map((item) => {
         // Assuming selectedAgent.key corresponds to the key in data state
         if (item.key === modalData.data.key) {
           // Append "nombre" and "apellido" to the existing "agente" value
 
-          if (newData.additionalInfo || newData.radioValue) {
+          if (newData.radioValue === "Si") {
             return {
               ...item,
 
@@ -222,7 +221,7 @@ const ListadoDeVisitas = () => {
           return {
             ...item,
 
-            estado: "Pendiente de cerrar contrato",
+            estado: "Finalizado",
           };
         }
         return item;
@@ -239,9 +238,9 @@ const ListadoDeVisitas = () => {
         handleOk={handleOk}
         handleCancel={handleCancel}
       />
-      <ModalAgenteRealizoVisita
+      <ReprogramarVisitaModal
         isModalOpen={
-          isModalOpen && modalData.actionType === "agente_realizo_visita"
+          isModalOpen && modalData.actionType === "deseas_reprogramar_visita"
         }
         data={modalData.data}
         handleOk={handleOk}
@@ -251,4 +250,4 @@ const ListadoDeVisitas = () => {
     </>
   );
 };
-export default ListadoDeVisitas;
+export default PotencialesPropietarios;
